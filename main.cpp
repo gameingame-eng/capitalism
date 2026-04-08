@@ -7,10 +7,29 @@
 
 bool exitGame = false;
 
-void DrawTextCentered(const char *text, int x, int y, int fontSize,
-                      Color color) {
-  DrawText(text, x - (MeasureText(text, fontSize) / 2), y, fontSize, color);
-}
+class SceneTransition {
+public:
+  int frames = 0;
+  int maxFrames = 0;
+  Color start, end;
+  bool finished = false;
+
+  void update() {
+    if (finished)
+      return;
+    frames++;
+    if (maxFrames == frames) {
+      finished = true;
+    }
+  }
+
+  SceneTransition(int maxFrames, Color start, Color end)
+      : maxFrames(maxFrames), start(start), end(end) {};
+
+  Color getColor() {
+    return ColorLerp(start, end, ease_in_out_cubic(frames / maxFrames));
+  }
+};
 
 enum GameMenuState { GMSTATE_MAIN, GMSTATE_GAME, GMSTATE_SHOP, GMSTATE_DEATH };
 
@@ -18,7 +37,8 @@ class GameMenuMain {
 public:
   const Texture2D gh_logo = LoadTexture("assets/github.jpg");
   bool is_switching_to_game = false;
-  float game_switch_transition_frames = 0;
+  SceneTransition transition =
+      SceneTransition(64, ColorAlpha(DARKGREEN, 0), DARKGREEN);
   float play_text_hovered_time = 0;
   float quit_text_hovered_time = 0;
   bool play_text_hovered, quit_text_hovered;
@@ -55,17 +75,14 @@ public:
     DrawTextCentered("> quit", RENDER_W / 2 + quit_text_x_offset,
                      RENDER_H / 3 + 64 + 16 + 48 + 8, 48, WHITE);
     if (is_switching_to_game) {
-      DrawRectangle(
-          0, 0, RENDER_W, RENDER_H,
-          ColorLerp(ColorAlpha(DARKGREEN, 0), DARKGREEN,
-                    ease_in_out_cubic(game_switch_transition_frames / 64)));
+      DrawRectangle(0, 0, RENDER_W, RENDER_H, transition.getColor());
     }
   }
 
   void update(Vector2 mouse_pos, GameMenuState &state) {
     if (is_switching_to_game) {
-      game_switch_transition_frames++;
-      if (game_switch_transition_frames >= 64) {
+      transition.update();
+      if (transition.finished) {
         state = GMSTATE_GAME;
       }
       return;
