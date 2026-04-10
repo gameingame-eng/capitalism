@@ -1,43 +1,42 @@
 #pragma once
 #include "assets.hpp"
+#include "global.hpp"
+#include "map.hpp"
+#include "player.hpp"
 #include "raylib.h"
 #include "utils.hpp"
 #include <raymath.h>
-
-#define PLAYER_CAMERA_FOLLOW_MARGIN 100
-
-enum MapTile { MAP_TILE_GRASS, MAP_TILE_TREE, MAP_TILE_STONE };
 
 class Game {
 public:
   SceneTransitionFade from_main_menu_transition =
       SceneTransitionFade(16, DARKGREEN, ColorAlpha(DARKGREEN, 0));
   Camera2D gamecam;
-  Rectangle player = {0, 0, MAP_TILE_SIZE, MAP_TILE_SIZE};
-  float playerSpeed = 200;
-  MapTile map[100][100] = {MAP_TILE_GRASS};
-  int player_facing = 0;
-  int player_anim_frame = 0;
-  int player_anim_frame_real_max = 10;
-  int player_anim_frame_real = 0;
-  PlayerSpriteState player_state = PLAYER_SPRITE_STATE_WALK;
+  MapTile map[100][100];
+
+  Player player;
 
   Game() {
-    gamecam.target = {player.x + player.width / 2,
-                      player.y + player.height / 2};
+    gamecam.target = {player.rect.x + player.rect.width / 2,
+                      player.rect.y + player.rect.height / 2};
     gamecam.offset = {RENDER_W / 2, RENDER_H / 2};
     gamecam.rotation = 0.0f;
     gamecam.zoom = 0.5f;
 
-    for (int i = 0; i < 100; i++) {
-      for (int j = 0; j < 100; j++) {
-        if (Vector2Distance({(float)j + 0.5f, (float)i + 0.5f},
+    for (int y = 0; y < 100; y++) {
+      for (int x = 0; x < 100; x++) {
+        if (Vector2Distance({(float)x + 0.5f, (float)y + 0.5f},
                             {50.0f, 50.0f}) > 5) {
+          map[y][x] = MapTile(MAP_TILE_SOURCE_GRASS);
           if (GetRandomValue(0, 6) == 3) {
-            map[j][i] = MAP_TILE_TREE;
+            map[y][x].type = MAP_TILE_TYPE_WALL;
+            map[y][x].name = MAP_TILE_SOURCE_TREE;
+            map[y][x].source = MapTileSourceNameToSource(MAP_TILE_SOURCE_TREE);
           }
         } else {
-          map[j][i] = MAP_TILE_STONE;
+          map[y][x].type = MAP_TILE_TYPE_FLOOR;
+          map[y][x].name = MAP_TILE_SOURCE_STONE;
+          map[y][x].source = MapTileSourceNameToSource(MAP_TILE_SOURCE_STONE);
         }
       }
     }
@@ -48,49 +47,7 @@ public:
       from_main_menu_transition.update();
     }
 
-    player_state = PLAYER_SPRITE_STATE_IDLE;
-
-    if (IsKeyDown(KEY_A)) {
-      player.x -= playerSpeed * dt;
-      player_facing = 1;
-      player_state = PLAYER_SPRITE_STATE_WALK;
-    } else if (IsKeyDown(KEY_D)) {
-      player.x += playerSpeed * dt;
-      player_facing = 2;
-      player_state = PLAYER_SPRITE_STATE_WALK;
-    }
-    if (IsKeyDown(KEY_W)) {
-      player.y -= playerSpeed * dt;
-      player_facing = 3;
-      player_state = PLAYER_SPRITE_STATE_WALK;
-    } else if (IsKeyDown(KEY_S)) {
-      player.y += playerSpeed * dt;
-      player_facing = 0;
-      player_state = PLAYER_SPRITE_STATE_WALK;
-    }
-
-    if (std::abs((player.x + player.width / 2) - gamecam.target.x) > 100) {
-      if (player.x > gamecam.target.x)
-        gamecam.target.x =
-            player.x + player.width / 2 - PLAYER_CAMERA_FOLLOW_MARGIN;
-      else
-        gamecam.target.x =
-            player.x + player.width / 2 + PLAYER_CAMERA_FOLLOW_MARGIN;
-    }
-    if (std::abs((player.y + player.height / 2) - gamecam.target.y) > 75) {
-      if (player.y > gamecam.target.y)
-        gamecam.target.y =
-            player.y + player.height / 2 - PLAYER_CAMERA_FOLLOW_MARGIN * 0.75;
-      else
-        gamecam.target.y =
-            player.y + player.height / 2 + PLAYER_CAMERA_FOLLOW_MARGIN * 0.75;
-    }
-
-    player_anim_frame_real++;
-    if (player_anim_frame_real == player_anim_frame_real_max) {
-      player_anim_frame = (player_anim_frame + 1) % 2;
-      player_anim_frame_real = 0;
-    }
+    player.update(map, dt, gamecam);
   }
 
   void draw() {
@@ -101,37 +58,12 @@ public:
         Rectangle source = {0, 0, 32, 32};
         Rectangle dest = {(i - 50) * MAP_TILE_SIZE, (j - 50) * MAP_TILE_SIZE,
                           MAP_TILE_SIZE, MAP_TILE_SIZE};
-        Texture2D *tileset = &tileset_01;
-        switch (map[j][i]) {
-        case MAP_TILE_GRASS: {
-          tileset = &tileset_02;
-          break;
-        }
-        case MAP_TILE_TREE: {
-          tileset = &tileset_b;
-          source = {2 * 32, 2 * 32, 32, 32};
-          break;
-        }
-        case MAP_TILE_STONE: {
-          tileset = &tileset_02;
-          source = {5 * 32, 3 * 32, 32, 32};
-          break;
-        }
-        }
-        tileset = &tileset_02;
-        if (MAP_TILE_TREE == map[j][i]) {
-          DrawTexturePro(*tileset, {0, 0, 32, 32}, dest, {0, 0}, 0, WHITE);
-          tileset = &tileset_b;
-        }
-
-        DrawTexturePro(*tileset, source, dest, {0, 0}, 0, WHITE);
+        DrawTexturePro(*map[j][i].image, map[j][i].source, dest, {0, 0}, 0,
+                       WHITE);
       }
     }
 
-    DrawTexturePro(
-        characters,
-        GetPlayerSpriteSource(player_state, player_anim_frame, player_facing),
-        player, {0, 0}, 0.0f, WHITE);
+    player.draw();
 
     EndMode2D();
 

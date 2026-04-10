@@ -16,7 +16,7 @@ int main() {
   LoadAssets();
   // SetWindowState(FLAG_FULLSCREEN_MODE);
 
-  enum GameMenuState game_menu_state = GMSTATE_MAIN;
+  enum GameMenuState game_menu_state = GMSTATE_GAME;
 
   RenderTexture2D render_texture = LoadRenderTexture(RENDER_W, RENDER_H);
   GameMenuMain main_menu;

@@ -6,6 +6,8 @@
 
 #define MAP_TILE_SIZE 100.0f
 
+#define PLAYER_CAMERA_FOLLOW_MARGIN 100
+
 inline bool exitGame = false;
 
 enum GameMenuState { GMSTATE_MAIN, GMSTATE_GAME, GMSTATE_SHOP, GMSTATE_DEATH };
