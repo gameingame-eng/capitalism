@@ -19,7 +19,7 @@ public:
   MapTile map[100][100] = {MAP_TILE_GRASS};
   int player_facing = 0;
   int player_anim_frame = 0;
-  int player_anim_frame_real_max = 30;
+  int player_anim_frame_real_max = 10;
   int player_anim_frame_real = 0;
   PlayerSpriteState player_state = PLAYER_SPRITE_STATE_WALK;
 
@@ -49,19 +49,25 @@ public:
       from_main_menu_transition.update();
     }
 
+    player_state = PLAYER_SPRITE_STATE_IDLE;
+
     if (IsKeyDown(KEY_A)) {
       player.x -= playerSpeed * dt;
       player_facing = 1;
+      player_state = PLAYER_SPRITE_STATE_WALK;
     } else if (IsKeyDown(KEY_D)) {
       player.x += playerSpeed * dt;
       player_facing = 2;
+      player_state = PLAYER_SPRITE_STATE_WALK;
     }
     if (IsKeyDown(KEY_W)) {
       player.y -= playerSpeed * dt;
       player_facing = 3;
+      player_state = PLAYER_SPRITE_STATE_WALK;
     } else if (IsKeyDown(KEY_S)) {
       player.y += playerSpeed * dt;
       player_facing = 0;
+      player_state = PLAYER_SPRITE_STATE_WALK;
     }
 
     if (std::abs((player.x + player.width / 2) - gamecam.target.x) > 100) {
