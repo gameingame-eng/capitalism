@@ -10,8 +10,19 @@ enum MapTileSourceName {
   MAP_TILE_SOURCE_STONE
 };
 
+inline Rectangle tmrfc(int x, int y) {
+  return {(float)x * 32, (float)y * 32, 32, 32};
+}
+
 inline Rectangle MapTileSourceNameToSource(MapTileSourceName s) {
-  return {0, 0, 1, 1};
+  switch (s) {
+  case MAP_TILE_SOURCE_GRASS:
+    return tmrfc(0, 0);
+  case MAP_TILE_SOURCE_TREE:
+    return tmrfc(2, 2);
+  case MAP_TILE_SOURCE_STONE:
+    return tmrfc(5, 0);
+  }
 }
 
 struct MapTile {
@@ -35,10 +46,15 @@ struct MapTile {
       break;
     case MAP_TILE_SOURCE_TREE:
       this->type = MAP_TILE_TYPE_WALL;
-      this->image = &tileset_02;
+      this->image = &tileset_b;
       break;
     }
   }
 
-  MapTile() {}
+  MapTile() {
+    type = MAP_TILE_TYPE_FLOOR;
+    name = MAP_TILE_SOURCE_GRASS;
+    source = {0, 0, 1, 1};
+    image = &tileset_02;
+  }
 };

@@ -12,7 +12,7 @@ public:
 
   int facing = 0;
   int anim_frame = 0;
-  int anim_frame_real_max = 10;
+  int anim_frame_real_max = 8;
   int anim_frame_real = 0;
   float speed = 200;
   PlayerSpriteState state;

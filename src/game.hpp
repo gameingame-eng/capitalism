@@ -29,14 +29,10 @@ public:
                             {50.0f, 50.0f}) > 5) {
           map[y][x] = MapTile(MAP_TILE_SOURCE_GRASS);
           if (GetRandomValue(0, 6) == 3) {
-            map[y][x].type = MAP_TILE_TYPE_WALL;
-            map[y][x].name = MAP_TILE_SOURCE_TREE;
-            map[y][x].source = MapTileSourceNameToSource(MAP_TILE_SOURCE_TREE);
+            map[y][x] = MapTile(MAP_TILE_SOURCE_TREE);
           }
         } else {
-          map[y][x].type = MAP_TILE_TYPE_FLOOR;
-          map[y][x].name = MAP_TILE_SOURCE_STONE;
-          map[y][x].source = MapTileSourceNameToSource(MAP_TILE_SOURCE_STONE);
+          map[y][x] = MapTile(MAP_TILE_SOURCE_STONE);
         }
       }
     }
@@ -58,6 +54,9 @@ public:
         Rectangle source = {0, 0, 32, 32};
         Rectangle dest = {(i - 50) * MAP_TILE_SIZE, (j - 50) * MAP_TILE_SIZE,
                           MAP_TILE_SIZE, MAP_TILE_SIZE};
+        if (map[j][i].name == MAP_TILE_SOURCE_TREE) {
+          DrawTexturePro(tileset_02, {0, 0, 32, 32}, dest, {0, 0}, 0, WHITE);
+        }
         DrawTexturePro(*map[j][i].image, map[j][i].source, dest, {0, 0}, 0,
                        WHITE);
       }

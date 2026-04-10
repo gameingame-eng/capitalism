@@ -15,6 +15,7 @@ int main() {
   InitWindow(RENDER_W, RENDER_H, "Capitalism");
   LoadAssets();
   // SetWindowState(FLAG_FULLSCREEN_MODE);
+  SetWindowState(FLAG_WINDOW_RESIZABLE);
 
   enum GameMenuState game_menu_state = GMSTATE_GAME;
 
