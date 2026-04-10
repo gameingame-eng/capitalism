@@ -220,4 +220,3 @@ A casino or tavern in town lets you risk gold for a chance at big returns — or
 - **Language:** C++
 - **Engine:** raylib
 - **Tileset:** Tiny 16 by Sharm (itch.io)
-- **Color scheme:** Everforest
