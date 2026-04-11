@@ -36,6 +36,16 @@ public:
         }
       }
     }
+
+    for (int y = 0; y < 100; y++) {
+      for (int x = 0; x < 100; x++) {
+        MapTileSourceName n = map[y - 1][x].name;
+        MapTileSourceName e = map[y][x + 1].name;
+        MapTileSourceName s = map[y + 1][x].name;
+        MapTileSourceName w = map[y][x - 1].name;
+        map[y][x].fix(n, e, s, w);
+      }
+    }
   }
 
   void update(float dt) {
