@@ -1,6 +1,7 @@
 #pragma once
 #include "assets.hpp"
 #include "enemy.hpp"
+#include "gamestate.hpp"
 #include "global.hpp"
 #include "map.hpp"
 #include "player.hpp"
@@ -16,6 +17,7 @@ public:
   Camera2D gamecam;
   MapTile map[100][100];
   std::vector<Enemy> enemies;
+  GameState state;
 
   Player player;
 
@@ -67,7 +69,7 @@ public:
                {player.hitbox.x + player.hitbox.width / 2,
                 player.hitbox.y + player.hitbox.height / 2},
                map);
-    player.update(map, dt, gamecam);
+    player.update(map, dt, gamecam, state, enemies);
   }
 
   void draw() {

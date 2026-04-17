@@ -27,7 +27,9 @@ public:
   Rectangle rect = {0, 0, MAP_TILE_SIZE, MAP_TILE_SIZE};
   int anim_frame = 1, anim_frame_real = 0, anim_frame_real_max = 10, facing = 0;
   int anim_dir = 1;
-  float speed = 40;
+  float speed = 70;
+  Vector2 vel = {0, 0};
+  float friction = 1600;
 
   Enemy(Rectangle rect) : rect(rect) {};
 
@@ -38,6 +40,16 @@ public:
   }
 
   void update(float dt, Vector2 playercenter, MapTile map[100][100]) {
+    if (abs(vel.x) >= friction * dt) {
+      vel.x -= vel.x >= 0 ? friction * dt : -friction * dt;
+    } else
+      vel.x = 0;
+
+    if (abs(vel.y) >= friction * dt) {
+      vel.y -= vel.y >= 0 ? friction * dt : -friction * dt;
+    } else
+      vel.y = 0;
+
     anim_frame_real++;
     if (anim_frame_real >= anim_frame_real_max) {
       anim_frame_real = 0;
@@ -52,8 +64,8 @@ public:
     Vector2 center = {rect.x + rect.width / 2, rect.y + rect.height / 2};
     Vector2 newpos = Vector2MoveTowards(center, playercenter, speed * dt);
 
-    float newx = newpos.x - rect.width / 2;
-    float newy = newpos.y - rect.height / 2;
+    float newx = newpos.x - rect.width / 2 + vel.x * dt;
+    float newy = newpos.y - rect.height / 2 + vel.y * dt;
 
     auto tileAt = [&](float wx, float wy) -> MapTile & {
       int tx = std::clamp((int)floor(wx / MAP_TILE_SIZE) + 50, 0, 99);
@@ -64,17 +76,16 @@ public:
     bool blockX =
         tileAt(newx, rect.y).type == MAP_TILE_TYPE_WALL ||
         tileAt(newx + rect.width, rect.y).type == MAP_TILE_TYPE_WALL ||
-        tileAt(newx, rect.y + rect.height).type == MAP_TILE_TYPE_WALL ||
-        tileAt(newx + rect.width, rect.y + rect.height).type ==
+        tileAt(newx, rect.y + rect.height - 1).type == MAP_TILE_TYPE_WALL ||
+        tileAt(newx + rect.width, rect.y + rect.height - 1).type ==
             MAP_TILE_TYPE_WALL;
 
     bool blockY =
         tileAt(rect.x, newy).type == MAP_TILE_TYPE_WALL ||
-        tileAt(rect.x + rect.width, newy).type == MAP_TILE_TYPE_WALL ||
+        tileAt(rect.x + rect.width - 1, newy).type == MAP_TILE_TYPE_WALL ||
         tileAt(rect.x, newy + rect.height).type == MAP_TILE_TYPE_WALL ||
-        tileAt(rect.x + rect.width, newy + rect.height).type ==
+        tileAt(rect.x + rect.width - 1, newy + rect.height).type ==
             MAP_TILE_TYPE_WALL;
-
     if (!blockX)
       rect.x = newx;
     if (!blockY)

@@ -1,9 +1,12 @@
 #pragma once
 #include "assets.hpp"
+#include "enemy.hpp"
+#include "gamestate.hpp"
 #include "global.hpp"
 #include "map.hpp"
 #include "raylib.h"
 #include <cmath>
+#include <vector>
 
 class Player {
 public:
@@ -16,8 +19,11 @@ public:
   int anim_frame_real = 0;
   float speed = 200;
   PlayerSpriteState state;
+  Vector2 vel = {0, 0};
+  float friction = 200;
 
-  void update(MapTile map[100][100], float dt, Camera2D &gamecam) {
+  void update(MapTile map[100][100], float dt, Camera2D &gamecam,
+              GameState &state, std::vector<Enemy> &enemies) {
     this->hitbox = {this->rect.x + ((this->rect.width / 32.0f) * 10),
                     this->rect.y + ((this->rect.height / 32.0f) * 4),
                     this->rect.width - ((this->rect.width / 32.0f) * 20),
@@ -25,64 +31,76 @@ public:
 
     this->state = PLAYER_SPRITE_STATE_IDLE;
 
+    if (abs(vel.x) >= friction)
+      vel.x -= vel.x >= 0 ? friction : -friction;
+    else
+      vel.x = 0;
+    if (abs(vel.y) >= friction)
+      vel.y -= vel.y >= 0 ? friction : -friction;
+    else
+      vel.y = 0;
+
     if (IsKeyDown(KEY_A)) {
-      int npxt =
-          (int)floor((this->hitbox.x - this->speed * dt) / MAP_TILE_SIZE) + 50;
-      int npyts[2] = {
-          (int)floor(this->hitbox.y / MAP_TILE_SIZE) + 50,
-          (int)floor((this->hitbox.y + this->hitbox.height) / MAP_TILE_SIZE) +
-              50};
-      if (map[npyts[0]][npxt].type != MAP_TILE_TYPE_WALL &&
-          map[npyts[1]][npxt].type != MAP_TILE_TYPE_WALL) {
-        this->rect.x -= this->speed * dt;
-        this->facing = 1;
-        this->state = PLAYER_SPRITE_STATE_WALK;
-      }
+      vel.x = -this->speed;
+      this->facing = 1;
+      this->state = PLAYER_SPRITE_STATE_WALK;
     } else if (IsKeyDown(KEY_D)) {
-      int npxt =
-          (int)floor((this->hitbox.x + this->hitbox.width + this->speed * dt) /
-                     MAP_TILE_SIZE) +
-          50;
-      int npyts[2] = {
-          (int)floor(this->hitbox.y / MAP_TILE_SIZE) + 50,
-          (int)floor((this->hitbox.y + this->hitbox.height) / MAP_TILE_SIZE) +
-              50};
-      if (map[npyts[0]][npxt].type != MAP_TILE_TYPE_WALL &&
-          map[npyts[1]][npxt].type != MAP_TILE_TYPE_WALL) {
-        this->rect.x += this->speed * dt;
-        this->facing = 2;
-        this->state = PLAYER_SPRITE_STATE_WALK;
-      }
+      this->facing = 2;
+      vel.x = this->speed;
+      this->state = PLAYER_SPRITE_STATE_WALK;
     }
     if (IsKeyDown(KEY_W)) {
-      int npxts[2] = {
-          (int)floor(this->hitbox.x / MAP_TILE_SIZE) + 50,
-          (int)floor((this->hitbox.x + this->hitbox.width) / MAP_TILE_SIZE) +
-              50};
-      int npyt =
-          (int)floor((this->hitbox.y - this->speed * dt) / MAP_TILE_SIZE) + 50;
-      if (map[npyt][npxts[0]].type != MAP_TILE_TYPE_WALL &&
-          map[npyt][npxts[1]].type != MAP_TILE_TYPE_WALL) {
-        this->rect.y -= this->speed * dt;
-        this->facing = 3;
-        this->state = PLAYER_SPRITE_STATE_WALK;
-      }
+      vel.y = -speed;
+      this->facing = 3;
+      this->state = PLAYER_SPRITE_STATE_WALK;
     } else if (IsKeyDown(KEY_S)) {
-      int npxts[2] = {
-          (int)floor(this->hitbox.x / MAP_TILE_SIZE) + 50,
-          (int)floor((this->hitbox.x + this->hitbox.width) / MAP_TILE_SIZE) +
-              50};
-      int npyt =
-          (int)floor((this->hitbox.y + this->hitbox.height + this->speed * dt) /
-                     MAP_TILE_SIZE) +
-          50;
-      if (map[npyt][npxts[0]].type != MAP_TILE_TYPE_WALL &&
-          map[npyt][npxts[1]].type != MAP_TILE_TYPE_WALL) {
+      vel.y = speed;
+      this->facing = 0;
+      this->state = PLAYER_SPRITE_STATE_WALK;
+    }
 
-        this->rect.y += this->speed * dt;
-        this->facing = 0;
-        this->state = PLAYER_SPRITE_STATE_WALK;
+    for (auto &e : enemies) {
+      if (CheckCollisionRecs(hitbox, e.rect)) {
+        Vector2 v = Vector2Scale(
+            Vector2Normalize(Vector2Subtract(
+                {hitbox.x - hitbox.width / 2, hitbox.y - hitbox.height / 2},
+                {e.rect.x - e.rect.width / 2, e.rect.y - e.rect.height / 2})),
+            700);
+
+        vel = v;
+        e.vel = Vector2Negate(v);
       }
+    }
+
+    const int ntxs[2] = {
+        (int)floor((int)(hitbox.x + vel.x * dt) / (int)MAP_TILE_SIZE) + 50,
+        (int)floor((int)(hitbox.x + vel.x * dt + hitbox.width) /
+                   (int)MAP_TILE_SIZE) +
+            50};
+    const int ntys[2] = {
+        (int)floor((int)(hitbox.y + vel.y * dt) / (int)MAP_TILE_SIZE) + 50,
+        (int)floor((int)(hitbox.y + vel.y * dt + hitbox.height) /
+                   (int)MAP_TILE_SIZE) +
+            50};
+
+    const int ctxs[2] = {
+        (int)floor((int)(hitbox.x) / (int)MAP_TILE_SIZE) + 50,
+        (int)floor((int)(hitbox.x + hitbox.width) / (int)MAP_TILE_SIZE) + 50};
+    const int ctys[2] = {
+        (int)floor((int)(hitbox.y) / (int)MAP_TILE_SIZE) + 50,
+        (int)floor((int)(hitbox.y + hitbox.height) / (int)MAP_TILE_SIZE) + 50};
+
+    auto iswall = [&](int x, int y) {
+      return map[y][x].type == MAP_TILE_TYPE_WALL;
+    };
+
+    if (!(iswall(ntxs[0], ctys[0]) || iswall(ntxs[0], ctys[1]) ||
+          iswall(ntxs[1], ctys[0]) || iswall(ntxs[1], ctys[1]))) {
+      rect.x += vel.x * dt;
+    }
+    if (!(iswall(ctxs[0], ntys[0]) || iswall(ctxs[0], ntys[1]) ||
+          iswall(ctxs[1], ntys[0]) || iswall(ctxs[1], ntys[1]))) {
+      rect.y += vel.y * dt;
     }
 
     if (std::abs((this->rect.x + this->rect.width / 2) - gamecam.target.x) >
