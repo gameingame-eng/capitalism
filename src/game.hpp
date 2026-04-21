@@ -96,6 +96,7 @@ public:
 
     EndMode2D();
 
+    DrawText(std::to_string(state.health).c_str(), 30, 30, 24, BLACK);
     if (!from_main_menu_transition.finished) {
       DrawRectangle(0, 0, 800, 600, from_main_menu_transition.getColor());
     }
